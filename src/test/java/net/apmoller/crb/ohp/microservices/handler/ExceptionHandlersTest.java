@@ -47,8 +47,6 @@ import static org.assertj.core.api.BDDAssertions.then;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-//@RunWith(PowerMockRunner.class)
-//@PowerMockIgnore("javax.management.*")
 public class ExceptionHandlersTest {
 
     private static final String FIELD_DESC_CONTENT_TYPE = "content type";
@@ -61,20 +59,20 @@ public class ExceptionHandlersTest {
     private static final String FIELD_DESC_API_ERROR_SUB_ERRORS = "api error sub errors";
     private static final String FIELD_DESC_API_ERROR_SUB_ERROR_COUNT = "api error sub error count";
     private static final String FIELD_DESC_VALIDATION_ERROR_COUNT = "validation error count";
-    private ExceptionHandlers exceptionHandlers = new ExceptionHandlers();;
+    private ExceptionHandlers exceptionHandlers = new ExceptionHandlers();
+    
     private ServletWebRequest servletWebRequest;
-//    private  MockHttpServletRequest servletRequest;
 
 
     @BeforeEach
-   public void setUp() {
+    public void setUp() {
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         this.servletWebRequest = new ServletWebRequest(servletRequest);
     }
 
 
     @Test
-    public  void testHandleResourceNotFoundException() {
+    public void testHandleResourceNotFoundException() {
 
         // given
         ResourceNotFoundException resourceNotFoundException = new ResourceNotFoundException("Shipment data not found for...");
@@ -352,7 +350,7 @@ public class ExceptionHandlersTest {
         // then
         then(responseEntity).isNotNull();
         then(responseEntity.getStatusCode()).describedAs("bad request response status").isEqualTo(HttpStatus.BAD_REQUEST);
-        ApiError apiError =  responseEntity.getBody();
+        ApiError apiError = responseEntity.getBody();
         then(apiError).isNotNull();
         then(apiError.getSubErrors()).isNotNull().isNotEmpty();
         then(apiError.getSubErrors().size()).isEqualTo(1);
@@ -381,7 +379,7 @@ public class ExceptionHandlersTest {
         then(responseEntity.getHeaders().getContentType()).describedAs(FIELD_DESC_CONTENT_TYPE).isEqualTo(MediaType.APPLICATION_JSON);
         then(responseEntity.hasBody()).describedAs(FIELD_DESC_HAS_RESPONSE_BODY).isEqualTo(true);
 
-        ApiError apiError =  responseEntity.getBody();
+        ApiError apiError = responseEntity.getBody();
         then(apiError).describedAs(FIELD_DESC_API_ERROR_RESPONSE).isNotNull();
         then(apiError.getStatus()).describedAs(FIELD_DESC_API_ERROR_STATUS).isEqualTo(HttpStatus.BAD_REQUEST.value());
         then(apiError.getTimestamp()).describedAs(FIELD_DESC_API_ERROR_TIMESTAMP).isNotNull();
@@ -521,7 +519,7 @@ public class ExceptionHandlersTest {
         HttpMessageNotReadableException exception = new HttpMessageNotReadableException("message not readable", mock(HttpInputMessage.class));
 
         // when
-        ResponseEntity<ApiError> responseEntity = exceptionHandlers.httpMessageNotReadableException(exception,  servletWebRequest);
+        ResponseEntity<ApiError> responseEntity = exceptionHandlers.httpMessageNotReadableException(exception, servletWebRequest);
 
         then(responseEntity).describedAs("bad request response").isNotNull();
         then(responseEntity.getStatusCode()).describedAs("bad request error response status").isEqualTo(HttpStatus.BAD_REQUEST);
@@ -599,6 +597,7 @@ public class ExceptionHandlersTest {
         then(apiError.getDebugMessage()).describedAs(FIELD_DESC_API_ERROR_DEBUG_MESSAGE).isEqualTo(httpMediaTypeNotSupportedException.getLocalizedMessage());
         then(apiError.getSubErrors()).describedAs(FIELD_DESC_API_ERROR_SUB_ERRORS).isNull();
     }
+
     /**
      * Simple test class with some properties that are annotated with validation constraints
      */

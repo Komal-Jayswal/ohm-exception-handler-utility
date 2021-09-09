@@ -368,8 +368,6 @@ public class AnnotatedExceptionHandlerTest {
         MethodParameter methodParameter = mock(MethodParameter.class);
         MethodArgumentTypeMismatchException typeMismatchException = new MethodArgumentTypeMismatchException("123", Boolean.TYPE, "isReefer",
                 methodParameter, new IllegalArgumentException("Invalid value"));
-//        MethodArgumentTypeMismatchException typeMismatchException1 = new MethodArgumentTypeMismatchException("123", Integer.TYPE, "hsCode",
-//                methodParameter, new IllegalArgumentException("Invalid value"));
 
         // when
         ResponseEntity<ApiError> responseEntity = exceptionHandlers.handleMethodArgumentTypeMismatchException(typeMismatchException, this.serverHttpRequest);
@@ -698,7 +696,6 @@ public class AnnotatedExceptionHandlerTest {
         then(apiError.getSubErrors()).isNotNull().isNotEmpty();
         then(apiError.getSubErrors().size()).isEqualTo(2);
 
-//        then(apiError.getSubErrors()).isNull();
         List<ApiValidationError> validationErrors = apiError.getSubErrors().stream()
                 .filter(subError -> subError instanceof ApiValidationError)
                 .map(subError -> (ApiValidationError) subError)

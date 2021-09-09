@@ -304,7 +304,7 @@ public class AnnotatedExceptionHandler {
         return buildResponseEntity(apiError);
     }
 
-//    /**
+    //    /**
 //     * Servlet request binding exception handler. The ServletRequestBindingException is thrown when a mandatory request
 //     * parameter is not sent in the request.
 //     *

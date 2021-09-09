@@ -13,7 +13,7 @@ import lombok.EqualsAndHashCode;
 
 @AllArgsConstructor
 @JsonRootName("apiValidationError")
-public class ApiValidationError extends net.apmoller.crb.ohp.microservices.model.ApiSubError {
+public class ApiValidationError extends ApiSubError {
 
     private String field;
     private Object rejectedValue;

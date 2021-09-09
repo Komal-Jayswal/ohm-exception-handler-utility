@@ -1,4 +1,5 @@
 package net.apmoller.crb.ohp.microservices.model;
+
 import org.junit.Test;
 
 import static org.assertj.core.api.BDDAssertions.then;
