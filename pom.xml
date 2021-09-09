@@ -23,6 +23,24 @@
             **/*net/apmoller/crb/ohp/microservices/util/*,
         </sonar.coverage.exclusions>
     </properties>
+    <repositories>
+        <repository>
+            <id>ohp-docm-maven-feed</id>
+            <url>https://pkgs.dev.azure.com/transport-logistics/a5506c2a-8a17-4150-b5c9-afc6270d998b/_packaging/ohp-docm-maven-feed/maven/v1</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+    <distributionManagement>
+        <repository>
+            <id>ohp-docm-maven-feed</id>
+            <url>https://pkgs.dev.azure.com/transport-logistics/a5506c2a-8a17-4150-b5c9-afc6270d998b/_packaging/ohp-docm-maven-feed/maven/v1</url>
+        </repository>
+    </distributionManagement>
     <dependencies>
 
         <!-- https://mvnrepository.com/artifact/org.powermock/powermock-module-junit4 -->
