@@ -304,13 +304,13 @@ public class AnnotatedExceptionHandler {
         return buildResponseEntity(apiError);
     }
 
-    /**
-     * Servlet request binding exception handler. The ServletRequestBindingException is thrown when a mandatory request
-     * parameter is not sent in the request.
-     *
-     * @param webExchangeBindException {@link WebExchangeBindException}
-     * @return responseEntity with status set to 400 and payload set to {@link ApiError}
-     */
+//    /**
+//     * Servlet request binding exception handler. The ServletRequestBindingException is thrown when a mandatory request
+//     * parameter is not sent in the request.
+//     *
+//     * @param webExchangeBindException {@link WebExchangeBindException}
+//     * @return responseEntity with status set to 400 and payload set to {@link ApiError}
+//     */
     @ExceptionHandler(value = WebExchangeBindException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ApiError> handleServletRequestBindingException(WebExchangeBindException webExchangeBindException,
@@ -319,18 +319,7 @@ public class AnnotatedExceptionHandler {
         ApiError apiError = new ApiError(serverHttpRequest.getMethod(), serverHttpRequest.getPath().value(),
                 HttpStatus.BAD_REQUEST, VALIDATION_ERROR_DESCRIPTION, webExchangeBindException);
 
-        List<ApiSubError> validationSubErrors = new ArrayList<>();
-
-        for (FieldError fieldError : webExchangeBindException.getFieldErrors()) {
-            validationSubErrors.add(new ApiValidationError(fieldError.getField(),
-                    fieldError.getRejectedValue(), fieldError.getDefaultMessage()) {
-            });
-        }
-
-        apiError.setSubErrors(validationSubErrors);
-
         logError(apiError);
-
         // WebExchangeBindException error message is too verbose and leaks information with regards to the underlying
         // framework used, we have logged the verbose error message so now set debug message to null so that it is not
         // returned to the client
