@@ -8,6 +8,7 @@ import net.apmoller.crb.ohp.microservices.model.ApiSubError;
 import net.apmoller.crb.ohp.microservices.model.ApiValidationError;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.powermock.reflect.Whitebox;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.codec.DecodingException;
@@ -549,6 +550,7 @@ public class AnnotatedExceptionHandlerTest {
         then(apiError.getTimestamp()).describedAs(FIELD_DESC_API_ERROR_TIMESTAMP).isNotNull();
         then(apiError.getMessage()).describedAs(FIELD_DESC_API_ERROR_MESSAGE).isEqualTo("Validation errors");
         then(apiError.getDebugMessage()).describedAs(FIELD_DESC_API_ERROR_DEBUG_MESSAGE).isNull();
+
     }
 
     /**
@@ -729,5 +731,34 @@ public class AnnotatedExceptionHandlerTest {
         then(apiError.getSubErrors()).describedAs(FIELD_DESC_API_ERROR_SUB_ERRORS).isNull();
 
     }
+
+    @Test
+    public void testHandleServerWebInputExceptionCauseDecodingException() {
+        // given
+
+        DecodingException decodingException = mock(DecodingException.class);
+        List<JsonMappingException.Reference> references = new ArrayList<>();
+        references.add(new JsonMappingException.Reference("dummyObject", "inputObject"));
+        references.add(new JsonMappingException.Reference("dummyDate", "inputDate"));
+
+
+        ServerWebInputException serverWebInputException = new ServerWebInputException("some issue", null, decodingException);
+
+        // when
+        ResponseEntity<ApiError> responseEntity = exceptionHandlers.handleServerWebInputException(serverWebInputException, serverHttpRequest);
+
+        then(responseEntity).describedAs("response for bad request").isNotNull();
+        then(responseEntity.getStatusCode()).describedAs("response status for bad request").isEqualTo(HttpStatus.BAD_REQUEST);
+
+        ApiError apiError = responseEntity.getBody();
+
+        then(apiError).describedAs(FIELD_DESC_API_ERROR_RESPONSE).isNotNull();
+        then(apiError.getStatus()).describedAs(FIELD_DESC_API_ERROR_STATUS).isEqualTo(HttpStatus.BAD_REQUEST.value());
+        then(apiError.getTimestamp()).describedAs(FIELD_DESC_API_ERROR_TIMESTAMP).isNotNull();
+        then(apiError.getMessage()).describedAs(FIELD_DESC_API_ERROR_MESSAGE).isEqualTo("Validation errors");
+        then(apiError.getSubErrors()).isNull();
+        
+    }
+
 
 }

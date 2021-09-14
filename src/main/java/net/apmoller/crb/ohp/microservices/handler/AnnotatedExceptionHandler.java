@@ -315,9 +315,25 @@ public class AnnotatedExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ApiError> handleServletRequestBindingException(WebExchangeBindException webExchangeBindException,
                                                                          ServerHttpRequest serverHttpRequest) {
-
         ApiError apiError = new ApiError(serverHttpRequest.getMethod(), serverHttpRequest.getPath().value(),
                 HttpStatus.BAD_REQUEST, VALIDATION_ERROR_DESCRIPTION, webExchangeBindException);
+        if(!webExchangeBindException.getGlobalErrors().isEmpty()) {
+              ApiValidationError validationError = new ApiValidationError("request body",
+                    null,webExchangeBindException.getGlobalError().getDefaultMessage() );
+            apiError.setSubErrors(Collections.singletonList(validationError));
+        }
+
+        List<ApiSubError> validationSubErrors = new ArrayList<>();
+        for (FieldError fieldError : webExchangeBindException.getFieldErrors()) {
+
+            ApiValidationError validationError = new ApiValidationError(fieldError.getField(),
+                    fieldError.getRejectedValue(), fieldError.getDefaultMessage());
+            validationSubErrors.add(validationError);
+        }
+
+        if (!validationSubErrors.isEmpty()) {
+            apiError.setSubErrors(validationSubErrors);
+        }
 
         logError(apiError);
         // WebExchangeBindException error message is too verbose and leaks information with regards to the underlying
@@ -327,7 +343,6 @@ public class AnnotatedExceptionHandler {
 
         return buildResponseEntity(apiError);
     }
-
     /**
      * Bad request exception handler to handle.
      *
