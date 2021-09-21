@@ -2,6 +2,7 @@ package net.apmoller.crb.ohp.microservices.handler;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import lombok.extern.slf4j.Slf4j;
 import net.apmoller.crb.ohp.microservices.exception.*;
 import net.apmoller.crb.ohp.microservices.model.ApiError;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -28,6 +30,7 @@ import javax.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static net.apmoller.crb.ohp.microservices.util.ExceptionUtils.*;
 
@@ -218,8 +221,22 @@ public class AnnotatedExceptionHandler {
         // If the root cause is due to a invalid format exception, add a validation sub error with the field name for which it failed
         if (serverWebInputException.getCause() instanceof DecodingException) {
             DecodingException decodingException = (DecodingException) serverWebInputException.getCause();
-            if (decodingException.getCause() instanceof InvalidFormatException) {
+            if (decodingException.getCause() instanceof InvalidFormatException || decodingException.getMostSpecificCause() instanceof MismatchedInputException) {
                 InvalidFormatException invalidFormatException = (InvalidFormatException) decodingException.getCause();
+                MismatchedInputException mismatchedInputException = (MismatchedInputException) decodingException.getCause();
+                if(Objects.requireNonNull(decodingException.getMessage()).contains("only \"true\" or \"false\" recognized")){
+                    List<JsonMappingException.Reference> references = mismatchedInputException.getPath();
+                    StringBuilder path = new StringBuilder();
+                    for (JsonMappingException.Reference reference : references) {
+                        path.append(reference.getFieldName()).append(".");
+                    }
+                    apiError.setDebugMessage(null);
+                    String fieldName = path.length() > 0 ? path.substring(0, path.length() - 1) : "";
+                    ApiValidationError validationError = new ApiValidationError(fieldName,   decodingException.getMessage().substring(
+                            decodingException.getMessage().indexOf("String ") + 8, decodingException.getMessage().indexOf("\": only")), fieldName+" should be true or false");
+                    apiError.setSubErrors(Collections.singletonList(validationError));
+                    return buildResponseEntity(apiError);
+                }
                 List<JsonMappingException.Reference> references = invalidFormatException.getPath();
                 StringBuilder path = new StringBuilder();
                 for (JsonMappingException.Reference reference : references) {

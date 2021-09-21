@@ -2,6 +2,7 @@ package net.apmoller.crb.ohp.microservices.handler;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import net.apmoller.crb.ohp.microservices.exception.*;
 import net.apmoller.crb.ohp.microservices.model.ApiError;
 import net.apmoller.crb.ohp.microservices.model.ApiSubError;
@@ -757,7 +758,44 @@ public class AnnotatedExceptionHandlerTest {
         then(apiError.getTimestamp()).describedAs(FIELD_DESC_API_ERROR_TIMESTAMP).isNotNull();
         then(apiError.getMessage()).describedAs(FIELD_DESC_API_ERROR_MESSAGE).isEqualTo("Validation errors");
         then(apiError.getSubErrors()).isNull();
-        
+
+    }
+    @Test
+    public void handleServerWebInputExceptionDueToInvalidFormat1() {
+
+        MismatchedInputException mismatchedInputException = mock(InvalidFormatException.class);
+        List<JsonMappingException.Reference> references = new ArrayList<>();
+        references.add(new JsonMappingException.Reference("dummyObject", "inputObject"));
+        references.add(new JsonMappingException.Reference("dummyDate", "inputDate"));
+        when(mismatchedInputException.getPath()).thenReturn(references);
+        ServerWebInputException serverWebInputException = new ServerWebInputException("\\\"Failed to read HTTP message\\\"; nested exception is org.springframework.core.codec.DecodingException: JSON decoding error: Cannot deserialize value of type `java.lang.Boolean` from String \\\"truefff\\\": only \\\"true\\\" or \\\"false\\\" recognized", null,
+                new DecodingException("Cannot deserialize value of type `java.lang.Boolean` from String \"truefff\": only \"true\" or \"false\" recognized", mismatchedInputException));
+
+        ResponseEntity<ApiError> responseEntity = exceptionHandlers.handleServerWebInputException(serverWebInputException, this.serverHttpRequest);
+        then(responseEntity).describedAs("response for bad request").isNotNull();
+        then(responseEntity.getStatusCode()).describedAs("response status for bad request").isEqualTo(HttpStatus.BAD_REQUEST);
+
+        ApiError apiError = responseEntity.getBody();
+
+        then(apiError).describedAs(FIELD_DESC_API_ERROR_RESPONSE).isNotNull();
+        then(apiError.getStatus()).describedAs(FIELD_DESC_API_ERROR_STATUS).isEqualTo(HttpStatus.BAD_REQUEST.value());
+        then(apiError.getTimestamp()).describedAs(FIELD_DESC_API_ERROR_TIMESTAMP).isNotNull();
+        then(apiError.getMessage()).describedAs(FIELD_DESC_API_ERROR_MESSAGE).isEqualTo("Validation errors");
+
+        List<ApiSubError> subErrorList = apiError.getSubErrors();
+        then(subErrorList).describedAs(FIELD_DESC_API_ERROR_SUB_ERRORS).isNotNull();
+        then(subErrorList.size()).describedAs(FIELD_DESC_API_ERROR_SUB_ERROR_COUNT).isEqualTo(1);
+
+        List<ApiValidationError> validationErrors = subErrorList.stream()
+                .filter(subError -> subError instanceof ApiValidationError)
+                .map(subError -> (ApiValidationError) subError)
+                .sorted(Comparator.comparing(ApiValidationError::getField))
+                .collect(Collectors.toList());
+
+        ApiValidationError validationError = validationErrors.get(0);
+        then(validationError.getMessage()).describedAs("validation error message").isNotNull();
+        then(validationError.getMessage()).describedAs("validation error message").isEqualTo("inputObject.inputDate should be true or false");
+        then(validationError.getField()).describedAs("validation field").isEqualTo("inputObject.inputDate");
     }
 
 
