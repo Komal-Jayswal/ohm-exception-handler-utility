@@ -761,7 +761,7 @@ public class AnnotatedExceptionHandlerTest {
 
     }
     @Test
-    public void handleServerWebInputExceptionDueToInvalidFormat1() {
+    public void handleServerWebInputExceptionDueToMismatchedInputException() {
 
         MismatchedInputException mismatchedInputException = mock(InvalidFormatException.class);
         List<JsonMappingException.Reference> references = new ArrayList<>();

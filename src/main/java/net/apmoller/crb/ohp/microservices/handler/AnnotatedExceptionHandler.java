@@ -223,26 +223,19 @@ public class AnnotatedExceptionHandler {
             DecodingException decodingException = (DecodingException) serverWebInputException.getCause();
             if (decodingException.getCause() instanceof InvalidFormatException || decodingException.getMostSpecificCause() instanceof MismatchedInputException) {
                 InvalidFormatException invalidFormatException = (InvalidFormatException) decodingException.getCause();
-                MismatchedInputException mismatchedInputException = (MismatchedInputException) decodingException.getCause();
-                if(Objects.requireNonNull(decodingException.getMessage()).contains("only \"true\" or \"false\" recognized")){
-                    List<JsonMappingException.Reference> references = mismatchedInputException.getPath();
-                    StringBuilder path = new StringBuilder();
-                    for (JsonMappingException.Reference reference : references) {
-                        path.append(reference.getFieldName()).append(".");
-                    }
-                    apiError.setDebugMessage(null);
-                    String fieldName = path.length() > 0 ? path.substring(0, path.length() - 1) : "";
-                    ApiValidationError validationError = new ApiValidationError(fieldName,   decodingException.getMessage().substring(
-                            decodingException.getMessage().indexOf("String ") + 8, decodingException.getMessage().indexOf("\": only")), fieldName+" should be true or false");
-                    apiError.setSubErrors(Collections.singletonList(validationError));
-                    return buildResponseEntity(apiError);
-                }
                 List<JsonMappingException.Reference> references = invalidFormatException.getPath();
                 StringBuilder path = new StringBuilder();
                 for (JsonMappingException.Reference reference : references) {
                     path.append(reference.getFieldName()).append(".");
                 }
                 apiError.setDebugMessage(null);
+                if (Objects.requireNonNull(decodingException.getMessage()).contains("only \"true\" or \"false\" recognized")) {
+                    String fieldName = path.length() > 0 ? path.substring(0, path.length() - 1) : "";
+                    ApiValidationError validationError = new ApiValidationError(fieldName, decodingException.getMessage().substring(
+                            decodingException.getMessage().indexOf("String ") + 8, decodingException.getMessage().indexOf("\": only")), fieldName + " should be true or false");
+                    apiError.setSubErrors(Collections.singletonList(validationError));
+                    return buildResponseEntity(apiError);
+                }
                 ApiValidationError validationError = new ApiValidationError(path.length() > 0 ? path.substring(0, path.length() - 1) : "", invalidFormatException.getValue(), "Invalid format");
                 apiError.setSubErrors(Collections.singletonList(validationError));
             }
@@ -334,9 +327,9 @@ public class AnnotatedExceptionHandler {
                                                                          ServerHttpRequest serverHttpRequest) {
         ApiError apiError = new ApiError(serverHttpRequest.getMethod(), serverHttpRequest.getPath().value(),
                 HttpStatus.BAD_REQUEST, VALIDATION_ERROR_DESCRIPTION, webExchangeBindException);
-        if(!webExchangeBindException.getGlobalErrors().isEmpty()) {
-              ApiValidationError validationError = new ApiValidationError("request body",
-                    null,webExchangeBindException.getGlobalError().getDefaultMessage() );
+        if (!webExchangeBindException.getGlobalErrors().isEmpty()) {
+            ApiValidationError validationError = new ApiValidationError("request body",
+                    null, webExchangeBindException.getGlobalError().getDefaultMessage());
             apiError.setSubErrors(Collections.singletonList(validationError));
         }
 
@@ -360,6 +353,7 @@ public class AnnotatedExceptionHandler {
 
         return buildResponseEntity(apiError);
     }
+
     /**
      * Bad request exception handler to handle.
      *
