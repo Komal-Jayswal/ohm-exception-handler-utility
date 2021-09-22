@@ -330,7 +330,7 @@ public class AnnotatedExceptionHandler {
                 HttpStatus.BAD_REQUEST, VALIDATION_ERROR_DESCRIPTION, webExchangeBindException);
         if (!webExchangeBindException.getGlobalErrors().isEmpty()) {
             ApiValidationError validationError = new ApiValidationError("request body",
-                    null, webExchangeBindException.getGlobalError().getDefaultMessage());
+                    null, Objects.requireNonNull(webExchangeBindException.getGlobalError()).getDefaultMessage());
             apiError.setSubErrors(Collections.singletonList(validationError));
         }
 
@@ -338,8 +338,8 @@ public class AnnotatedExceptionHandler {
         for (FieldError fieldError : webExchangeBindException.getFieldErrors()) {
           Object rejectedVal = fieldError.getRejectedValue();
            if(rejectedVal !=null){
-               if (fieldError.getRejectedValue() instanceof LocalDate) {
-                   ((LocalDate) fieldError.getRejectedValue()).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+               if (rejectedVal instanceof LocalDate) {
+                   ((LocalDate) rejectedVal).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
                } else {
                    fieldError.getRejectedValue();
                }
