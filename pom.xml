@@ -10,8 +10,8 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>net.apmoller.crb.ohp.microservices</groupId>
-    <artifactId>ohp-exception-handler</artifactId>
-    <name>Exception-Handler</name>
+    <artifactId>ohp-exception-handlers</artifactId>
+    <name>ohp-exception-handler</name>
     <version>1.0.0</version>
     <properties>
         <java.version>11</java.version>

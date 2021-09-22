@@ -58,7 +58,7 @@ stages:
             enabled: true
             inputs:
               mavenPomFile: 'pom.xml'
-              options: $(MAVEN_OPTS) -B -e -Dsonar.host.url=https://ado-sonar.maerskdev.net -Dsonar.login=$(ado-sonarqube-azure-devops) -Dsonar.projectKey=ohp-exception-handler -Dsonar.projectName=Exception-Handler
+              options: $(MAVEN_OPTS) -B -e -Dsonar.host.url=https://ado-sonar.maerskdev.net -Dsonar.login=$(ado-sonarqube-azure-devops) -Dsonar.projectKey=ohp-exception-handlers -Dsonar.projectName=ohp-exception-handler
               publishJUnitResults: true
               testResultsFiles: '**/surefire-reports/TEST-*.xml'
               testRunTitle: 'Unit Test Run'
