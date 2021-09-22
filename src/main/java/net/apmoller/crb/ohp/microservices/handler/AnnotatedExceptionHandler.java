@@ -337,7 +337,7 @@ public class AnnotatedExceptionHandler {
 
         List<ApiSubError> validationSubErrors = new ArrayList<>();
         for (FieldError fieldError : webExchangeBindException.getFieldErrors()) {
-            Object  rejectedVal = fieldError.getRejectedValue() instanceof LocalDate ? ((LocalDate)fieldError.getRejectedValue()).format(DateTimeFormatter.ofPattern("dd-MM-yyyy")): fieldError.getRejectedValue();
+            Object  rejectedVal = fieldError.getRejectedValue() != null ? fieldError.getRejectedValue() instanceof LocalDate ? ((LocalDate)fieldError.getRejectedValue()).format(DateTimeFormatter.ofPattern("dd-MM-yyyy")): fieldError.getRejectedValue():null;
             ApiValidationError validationError = new ApiValidationError(fieldError.getField(),
                     Objects.requireNonNullElse(rejectedVal, "").toString(), fieldError.getDefaultMessage());
             validationSubErrors.add(validationError);

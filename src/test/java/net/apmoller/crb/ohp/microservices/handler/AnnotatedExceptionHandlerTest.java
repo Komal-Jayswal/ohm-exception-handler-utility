@@ -40,6 +40,8 @@ import java.io.IOException;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -841,6 +843,49 @@ public class AnnotatedExceptionHandlerTest {
         then(firstValidationError.getRejectedValue()).describedAs("first validation error rejected value").isEqualTo("");
         then(firstValidationError.getMessage()).describedAs("first validation error validation message").isEqualTo("Invalid Carrier Code");
 
+
+    }
+    @Test
+    public void missingParameterShouldReturn400AndApiErrorWithRejectedValue() {
+
+        // given
+        MethodParameter methodParameter = mock(MethodParameter.class);
+        when(methodParameter.getParameterIndex()).thenReturn(0);
+        Executable executable = mock(Executable.class);
+        when(executable.toGenericString()).thenReturn("Some Executable");
+        when(methodParameter.getExecutable()).thenReturn(executable);
+        BindingResult bindingResult = mock(BindingResult.class);
+        WebExchangeBindException serverRequestBindException = new WebExchangeBindException(methodParameter,bindingResult);
+
+        // when
+        ResponseEntity<ApiError> responseEntity = exceptionHandlers.handleServletRequestBindingException(serverRequestBindException, this.serverHttpRequest);
+
+        then(responseEntity).isNotNull();
+        then(responseEntity.getStatusCode()).describedAs("bad request response status").isEqualTo(HttpStatus.BAD_REQUEST);
+
+        FieldError fieldError = new FieldError("Code","ValidToDate", LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),false,null,null,"Invalid ValidToDate Format");
+        bindingResult = new BeanPropertyBindingResult("User", "ID");
+        bindingResult.addError(fieldError);
+        serverRequestBindException = new WebExchangeBindException(methodParameter, bindingResult);
+
+        // when
+        responseEntity = exceptionHandlers.handleServletRequestBindingException(serverRequestBindException, this.serverHttpRequest);
+
+        // then
+        then(responseEntity).isNotNull();
+        ApiError apiError =  responseEntity.getBody();
+        then(apiError.getSubErrors()).isNotNull().isNotEmpty();
+        then(apiError.getSubErrors().size()).isEqualTo(1);
+
+        List<ApiValidationError> validationErrors = apiError.getSubErrors().stream()
+                .filter(subError -> subError instanceof ApiValidationError)
+                .map(subError -> (ApiValidationError) subError)
+                .sorted(Comparator.comparing(ApiValidationError::getField))
+                .collect(Collectors.toList());
+        ApiValidationError firstValidationError = validationErrors.get(0);
+        then(firstValidationError.getField()).describedAs("first validation error field name").isEqualTo("ValidToDate");
+        then(firstValidationError.getRejectedValue()).describedAs("first validation error rejected value").isEqualTo("22-09-2021");
+        then(firstValidationError.getMessage()).describedAs("first validation error validation message").isEqualTo("Invalid ValidToDate Format");
 
     }
 
