@@ -34,7 +34,7 @@ public class ServerWebInputExceptionHandler extends AnnotatedExceptionHandler {
     private static final String INVALID_FORMAT_SUBERROR_MESSAGE = "Invalid format";
     private static final String INVALID_VALUE_SUBERROR_MESSAGE = "Invalid value";
 
-//    @Override
+    @Override
     @ExceptionHandler({ServerWebInputException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ApiError> handleServerWebInputException(ServerWebInputException serverWebInputException,
