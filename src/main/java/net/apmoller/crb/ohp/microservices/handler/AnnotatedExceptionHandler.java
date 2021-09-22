@@ -14,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -337,8 +336,15 @@ public class AnnotatedExceptionHandler {
 
         List<ApiSubError> validationSubErrors = new ArrayList<>();
         for (FieldError fieldError : webExchangeBindException.getFieldErrors()) {
-            Object  rejectedVal = fieldError.getRejectedValue() != null ? fieldError.getRejectedValue() instanceof LocalDate ? ((LocalDate)fieldError.getRejectedValue()).format(DateTimeFormatter.ofPattern("dd-MM-yyyy")): fieldError.getRejectedValue():null;
-            ApiValidationError validationError = new ApiValidationError(fieldError.getField(),
+          Object rejectedVal = fieldError.getRejectedValue();
+           if(rejectedVal !=null){
+               if (fieldError.getRejectedValue() instanceof LocalDate) {
+                   ((LocalDate) fieldError.getRejectedValue()).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+               } else {
+                   fieldError.getRejectedValue();
+               }
+           }
+           ApiValidationError validationError = new ApiValidationError(fieldError.getField(),
                     Objects.requireNonNullElse(rejectedVal, "").toString(), fieldError.getDefaultMessage());
             validationSubErrors.add(validationError);
         }
