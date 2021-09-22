@@ -27,6 +27,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.server.ServerWebInputException;
 
 import javax.validation.ConstraintViolationException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -335,9 +337,9 @@ public class AnnotatedExceptionHandler {
 
         List<ApiSubError> validationSubErrors = new ArrayList<>();
         for (FieldError fieldError : webExchangeBindException.getFieldErrors()) {
-
+            Object  rejectedVal = fieldError.getRejectedValue() instanceof LocalDate ? ((LocalDate)fieldError.getRejectedValue()).format(DateTimeFormatter.ofPattern("dd-MM-yyyy")): fieldError.getRejectedValue();
             ApiValidationError validationError = new ApiValidationError(fieldError.getField(),
-                    fieldError.getRejectedValue(), fieldError.getDefaultMessage());
+                    Objects.requireNonNullElse(rejectedVal, "").toString(), fieldError.getDefaultMessage());
             validationSubErrors.add(validationError);
         }
 

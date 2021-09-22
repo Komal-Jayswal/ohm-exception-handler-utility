@@ -9,7 +9,6 @@ import net.apmoller.crb.ohp.microservices.model.ApiSubError;
 import net.apmoller.crb.ohp.microservices.model.ApiValidationError;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.powermock.reflect.Whitebox;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.codec.DecodingException;
@@ -798,5 +797,51 @@ public class AnnotatedExceptionHandlerTest {
         then(validationError.getField()).describedAs("validation field").isEqualTo("inputObject.inputDate");
     }
 
+    @Test
+    public void missingParameterShouldReturn400AndApiErrorwithsuberrors() {
+
+        // given
+        MethodParameter methodParameter = mock(MethodParameter.class);
+        when(methodParameter.getParameterIndex()).thenReturn(0);
+        Executable executable = mock(Executable.class);
+        when(executable.toGenericString()).thenReturn("Some Executable");
+        when(methodParameter.getExecutable()).thenReturn(executable);
+        BindingResult bindingResult = mock(BindingResult.class);
+        WebExchangeBindException serverRequestBindException = new WebExchangeBindException(methodParameter,bindingResult);
+
+        // when
+        ResponseEntity<ApiError> responseEntity = exceptionHandlers.handleServletRequestBindingException(serverRequestBindException, this.serverHttpRequest);
+
+        then(responseEntity).isNotNull();
+        then(responseEntity.getStatusCode()).describedAs("bad request response status").isEqualTo(HttpStatus.BAD_REQUEST);
+
+        FieldError fieldError1 = new FieldError("Code", "CarrierCode", "Invalid Carrier Code");
+        FieldError fieldError2 = new FieldError("Code", "CarrierCode", "Invalid Carrier Code");
+        bindingResult = new BeanPropertyBindingResult("User", "ID");
+        bindingResult.addError(fieldError1);
+        bindingResult.addError(fieldError2);
+        serverRequestBindException = new WebExchangeBindException(methodParameter, bindingResult);
+
+        // when
+        responseEntity = exceptionHandlers.handleServletRequestBindingException(serverRequestBindException, this.serverHttpRequest);
+
+        // then
+        then(responseEntity).isNotNull();
+        ApiError apiError =  responseEntity.getBody();
+        then(apiError.getSubErrors()).isNotNull().isNotEmpty();
+        then(apiError.getSubErrors().size()).isEqualTo(2);
+
+        List<ApiValidationError> validationErrors = apiError.getSubErrors().stream()
+                .filter(subError -> subError instanceof ApiValidationError)
+                .map(subError -> (ApiValidationError) subError)
+                .sorted(Comparator.comparing(ApiValidationError::getField))
+                .collect(Collectors.toList());
+        ApiValidationError firstValidationError = validationErrors.get(0);
+        then(firstValidationError.getField()).describedAs("first validation error field name").isEqualTo("CarrierCode");
+        then(firstValidationError.getRejectedValue()).describedAs("first validation error rejected value").isEqualTo("");
+        then(firstValidationError.getMessage()).describedAs("first validation error validation message").isEqualTo("Invalid Carrier Code");
+
+
+    }
 
 }
