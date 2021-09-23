@@ -1,0 +1,76 @@
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+trigger:
+  - develop
+
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: docm-common-var-group
+  - name: MAVEN_CACHE_FOLDER
+    value: $(Pipeline.Workspace)/.m2/repository
+  - name: MAVEN_OPTS
+    value: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+
+stages:
+  - stage:
+    jobs:
+      - job: BuildAndPersistArtefacts
+        displayName: Build and Persist Artefacts
+        steps:
+          - checkout: self
+            persistCredentials: true
+          - task: MavenAuthenticate@0
+            inputs:
+              artifactsFeeds: 'ohp-docm-maven-feed'
+
+          - task: Cache@2
+            inputs:
+              key: 'maven | "$(Agent.OS)" | **/pom.xml'
+              restoreKeys: |
+                maven | "$(Agent.OS)"
+                maven
+              path: $(MAVEN_CACHE_FOLDER)
+              displayName: Cache Maven local repo
+
+          - task: Bash@3
+            displayName: 'Release Artefact'
+            inputs:
+              targetType: filePath
+              filePath: './pipeline/step_1_prepare_release.sh'
+            env:
+              AZURE_DEVOPS_TOKEN: $(azdevopsFeedToken)
+              MAVEN_CACHE_FOLDER: $(MAVEN_CACHE_FOLDER)
+
+          - task: AzureKeyVault@1
+            displayName: Getting SonarQube token from Azure key vault
+            inputs:
+              azureSubscription: 'ado_sonar_maerskdev_net_token-Documentation - OHP'
+              KeyVaultName: 'az-eng-enablement-vault'
+              SecretsFilter: 'ado-sonarqube-azure-devops'
+
+          - task: Maven@3
+            displayName: Running mvn package
+            enabled: true
+            inputs:
+              mavenPomFile: 'pom.xml'
+              options: $(MAVEN_OPTS) -B -e -Dsonar.host.url=https://ado-sonar.maerskdev.net -Dsonar.login=$(ado-sonarqube-azure-devops) -Dsonar.projectKey=ohp-exception-handlers -Dsonar.projectName=ohp-exception-handler
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              testRunTitle: 'Unit Test Run'
+              codeCoverageToolOption: 'JaCoCo'
+              codeCoverageFailIfEmpty: true
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.11'
+              jdkArchitectureOption: 'x64'
+              mavenVersionOption: 'Default'
+              mavenAuthenticateFeed: true
+              effectivePomSkip: true
+              sonarQubeRunAnalysis: true
+              isJacocoCoverageReportXML: true
+              sqMavenPluginVersionChoice: 'pom'
+              goals: 'deploy'
