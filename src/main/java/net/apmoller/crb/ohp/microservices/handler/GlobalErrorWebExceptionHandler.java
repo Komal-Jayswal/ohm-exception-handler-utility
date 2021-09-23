@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
 public class GlobalErrorWebExceptionHandler extends DefaultErrorWebExceptionHandler {
 
     private static final String ERROR_ATTRIBUTE = DefaultErrorAttributes.class.getName() + ".ERROR";
-    private static final net.apmoller.crb.ohp.microservices.handler.ReactiveErrorHandler error = new net.apmoller.crb.ohp.microservices.handler.ReactiveErrorHandler();
+    private static final ReactiveErrorHandler error = new ReactiveErrorHandler();
 
     public GlobalErrorWebExceptionHandler(ApiError apiError, ApplicationContext applicationContext, ServerCodecConfigurer serverCodecConfigurer) {
         super(apiError, new WebProperties.Resources(), new ErrorProperties(), applicationContext);

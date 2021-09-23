@@ -884,7 +884,7 @@ public class AnnotatedExceptionHandlerTest {
                 .collect(Collectors.toList());
         ApiValidationError firstValidationError = validationErrors.get(0);
         then(firstValidationError.getField()).describedAs("first validation error field name").isEqualTo("ValidToDate");
-        then(firstValidationError.getRejectedValue()).describedAs("first validation error rejected value").isEqualTo("22-09-2021");
+        then(firstValidationError.getRejectedValue()).describedAs("first validation error rejected value").isEqualTo( LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
         then(firstValidationError.getMessage()).describedAs("first validation error validation message").isEqualTo("Invalid ValidToDate Format");
 
     }
