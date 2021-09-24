@@ -336,15 +336,15 @@ public class AnnotatedExceptionHandler {
 
         List<ApiSubError> validationSubErrors = new ArrayList<>();
         for (FieldError fieldError : webExchangeBindException.getFieldErrors()) {
-          Object rejectedVal = fieldError.getRejectedValue();
-           if(rejectedVal !=null){
-               if (rejectedVal instanceof LocalDate) {
-                   ((LocalDate) rejectedVal).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-               } else {
-                   fieldError.getRejectedValue();
-               }
-           }
-           ApiValidationError validationError = new ApiValidationError(fieldError.getField(),
+            Object rejectedVal = fieldError.getRejectedValue();
+            if (rejectedVal != null) {
+                if (rejectedVal instanceof LocalDate) {
+                    rejectedVal = ((LocalDate) rejectedVal).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                } else {
+                    fieldError.getRejectedValue();
+                }
+            }
+            ApiValidationError validationError = new ApiValidationError(fieldError.getField(),
                     Objects.requireNonNullElse(rejectedVal, "").toString(), fieldError.getDefaultMessage());
             validationSubErrors.add(validationError);
         }
