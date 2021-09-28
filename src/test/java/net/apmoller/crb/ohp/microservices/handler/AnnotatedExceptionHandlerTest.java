@@ -1,5 +1,6 @@
 package net.apmoller.crb.ohp.microservices.handler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ServerWebInputException;
 
 import javax.validation.ConstraintViolation;
@@ -349,7 +351,7 @@ public class AnnotatedExceptionHandlerTest {
 
         // then
         then(responseEntity).isNotNull();
-        ApiError apiError =  responseEntity.getBody();
+        ApiError apiError = responseEntity.getBody();
         then(apiError.getSubErrors()).isNotNull().isNotEmpty();
         then(apiError.getSubErrors().size()).isEqualTo(1);
         List<ApiValidationError> validationErrors = apiError.getSubErrors().stream()
@@ -696,7 +698,7 @@ public class AnnotatedExceptionHandlerTest {
 
         // then
         then(responseEntity).isNotNull();
-        ApiError apiError =  responseEntity.getBody();
+        ApiError apiError = responseEntity.getBody();
         then(apiError.getSubErrors()).isNotNull().isNotEmpty();
         then(apiError.getSubErrors().size()).isEqualTo(2);
 
@@ -711,6 +713,7 @@ public class AnnotatedExceptionHandlerTest {
         then(firstValidationError.getMessage()).describedAs("first validation error validation message").isEqualTo("Invalid Carrier Code");
 
     }
+
     @Test
     public void testHandleServerWebInputException() {
         // given
@@ -761,6 +764,7 @@ public class AnnotatedExceptionHandlerTest {
         then(apiError.getSubErrors()).isNull();
 
     }
+
     @Test
     public void handleServerWebInputExceptionDueToMismatchedInputException() {
 
@@ -809,7 +813,7 @@ public class AnnotatedExceptionHandlerTest {
         when(executable.toGenericString()).thenReturn("Some Executable");
         when(methodParameter.getExecutable()).thenReturn(executable);
         BindingResult bindingResult = mock(BindingResult.class);
-        WebExchangeBindException serverRequestBindException = new WebExchangeBindException(methodParameter,bindingResult);
+        WebExchangeBindException serverRequestBindException = new WebExchangeBindException(methodParameter, bindingResult);
 
         // when
         ResponseEntity<ApiError> responseEntity = exceptionHandlers.handleServletRequestBindingException(serverRequestBindException, this.serverHttpRequest);
@@ -829,7 +833,7 @@ public class AnnotatedExceptionHandlerTest {
 
         // then
         then(responseEntity).isNotNull();
-        ApiError apiError =  responseEntity.getBody();
+        ApiError apiError = responseEntity.getBody();
         then(apiError.getSubErrors()).isNotNull().isNotEmpty();
         then(apiError.getSubErrors().size()).isEqualTo(2);
 
@@ -845,6 +849,7 @@ public class AnnotatedExceptionHandlerTest {
 
 
     }
+
     @Test
     public void missingParameterShouldReturn400AndApiErrorWithRejectedValue() {
 
@@ -855,7 +860,7 @@ public class AnnotatedExceptionHandlerTest {
         when(executable.toGenericString()).thenReturn("Some Executable");
         when(methodParameter.getExecutable()).thenReturn(executable);
         BindingResult bindingResult = mock(BindingResult.class);
-        WebExchangeBindException serverRequestBindException = new WebExchangeBindException(methodParameter,bindingResult);
+        WebExchangeBindException serverRequestBindException = new WebExchangeBindException(methodParameter, bindingResult);
 
         // when
         ResponseEntity<ApiError> responseEntity = exceptionHandlers.handleServletRequestBindingException(serverRequestBindException, this.serverHttpRequest);
@@ -863,7 +868,7 @@ public class AnnotatedExceptionHandlerTest {
         then(responseEntity).isNotNull();
         then(responseEntity.getStatusCode()).describedAs("bad request response status").isEqualTo(HttpStatus.BAD_REQUEST);
 
-        FieldError fieldError = new FieldError("Code","ValidToDate", LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),false,null,null,"Invalid ValidToDate Format");
+        FieldError fieldError = new FieldError("Code", "ValidToDate", LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")), false, null, null, "Invalid ValidToDate Format");
         bindingResult = new BeanPropertyBindingResult("User", "ID");
         bindingResult.addError(fieldError);
         serverRequestBindException = new WebExchangeBindException(methodParameter, bindingResult);
@@ -873,7 +878,7 @@ public class AnnotatedExceptionHandlerTest {
 
         // then
         then(responseEntity).isNotNull();
-        ApiError apiError =  responseEntity.getBody();
+        ApiError apiError = responseEntity.getBody();
         then(apiError.getSubErrors()).isNotNull().isNotEmpty();
         then(apiError.getSubErrors().size()).isEqualTo(1);
 
@@ -884,9 +889,51 @@ public class AnnotatedExceptionHandlerTest {
                 .collect(Collectors.toList());
         ApiValidationError firstValidationError = validationErrors.get(0);
         then(firstValidationError.getField()).describedAs("first validation error field name").isEqualTo("ValidToDate");
-        then(firstValidationError.getRejectedValue()).describedAs("first validation error rejected value").isEqualTo( LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+        then(firstValidationError.getRejectedValue()).describedAs("first validation error rejected value").isEqualTo(LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
         then(firstValidationError.getMessage()).describedAs("first validation error validation message").isEqualTo("Invalid ValidToDate Format");
 
+    }
+
+    @Test
+    public void testHandleWebClientResponseExceptionForUnauthorized() throws JsonProcessingException {
+        // given
+        WebClientResponseException webClientResponseException = new WebClientResponseException(401, "Unauthorized", null, null, null);
+
+        // when
+        ResponseEntity<ApiError> responseEntity = exceptionHandlers.webClientResponseExceptionHandler(webClientResponseException, serverHttpRequest);
+
+        then(responseEntity).isNotNull();
+        then(responseEntity.getStatusCode()).describedAs("unauthorized response status").isEqualTo(HttpStatus.UNAUTHORIZED);
+        then(responseEntity.getHeaders().getContentType()).describedAs(FIELD_DESC_CONTENT_TYPE).isEqualTo(MediaType.APPLICATION_JSON);
+        then(responseEntity.hasBody()).describedAs(FIELD_DESC_HAS_RESPONSE_BODY).isEqualTo(true);
+
+        ApiError apiError = responseEntity.getBody();
+        then(apiError).describedAs(FIELD_DESC_API_ERROR_RESPONSE).isNotNull();
+        then(apiError.getStatus()).describedAs(FIELD_DESC_API_ERROR_STATUS).isEqualTo(HttpStatus.UNAUTHORIZED.value());
+        then(apiError.getTimestamp()).describedAs(FIELD_DESC_API_ERROR_TIMESTAMP).isNotNull();
+        then(apiError.getMessage()).describedAs(FIELD_DESC_API_ERROR_MESSAGE).isEqualTo("Invalid Token");
+        then(apiError.getDebugMessage()).describedAs(FIELD_DESC_API_ERROR_DEBUG_MESSAGE).isNull();
+        then(apiError.getSubErrors()).describedAs(FIELD_DESC_API_ERROR_SUB_ERRORS).isNull();
+    }
+
+    @Test
+    public void testHandleWebClientResponseException() throws JsonProcessingException {
+        // given
+        WebClientResponseException webClientResponseException = new WebClientResponseException("Service Unavailable", 503, "Service Unavailable", null, null, null);
+
+        // when
+        ResponseEntity<ApiError> responseEntity = exceptionHandlers.webClientResponseExceptionHandler(webClientResponseException, serverHttpRequest);
+
+        then(responseEntity).isNotNull();
+        then(responseEntity.getStatusCode()).describedAs("service Unavailable response status").isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        then(responseEntity.getHeaders().getContentType()).describedAs(FIELD_DESC_CONTENT_TYPE).isEqualTo(MediaType.APPLICATION_JSON);
+        then(responseEntity.hasBody()).describedAs(FIELD_DESC_HAS_RESPONSE_BODY).isEqualTo(true);
+
+        ApiError apiError = responseEntity.getBody();
+        then(apiError).describedAs(FIELD_DESC_API_ERROR_RESPONSE).isNotNull();
+        then(apiError.getStatus()).describedAs(FIELD_DESC_API_ERROR_STATUS).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE.value());
+        then(apiError.getTimestamp()).describedAs(FIELD_DESC_API_ERROR_TIMESTAMP).isNotNull();
+        then(apiError.getSubErrors()).describedAs(FIELD_DESC_API_ERROR_SUB_ERRORS).isNull();
     }
 
 }
