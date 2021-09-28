@@ -33,7 +33,7 @@ public class ApiError extends DefaultErrorAttributes {
     private String timestamp;
     private String message;
     private String debugMessage;
-    private List<net.apmoller.crb.ohp.microservices.model.ApiSubError> subErrors;
+    private List<ApiSubError> subErrors;
     private String id; // UUID of error which can be used for searching logs
 
     private static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
@@ -67,6 +67,15 @@ public class ApiError extends DefaultErrorAttributes {
         this.status = status.value();
         this.message = message;
         this.debugMessage = ex.getLocalizedMessage();
+    }
+
+    public ApiError(HttpMethod method, String requestUri, HttpStatus status, String message, String debugMessage) {
+        this();
+        this.method = method;
+        this.requestUri = requestUri;
+        this.status = status.value();
+        this.message = message;
+        this.debugMessage = debugMessage;
     }
 
     public List<net.apmoller.crb.ohp.microservices.model.ApiSubError> getSubErrors() {

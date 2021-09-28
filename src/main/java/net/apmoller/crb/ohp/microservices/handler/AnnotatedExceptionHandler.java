@@ -1,6 +1,8 @@
 package net.apmoller.crb.ohp.microservices.handler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +11,8 @@ import net.apmoller.crb.ohp.microservices.model.ApiError;
 import net.apmoller.crb.ohp.microservices.model.ApiSubError;
 import net.apmoller.crb.ohp.microservices.model.ApiValidationError;
 import net.apmoller.crb.ohp.microservices.util.ExceptionUtils;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,9 +27,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ServerWebInputException;
 
 import javax.validation.ConstraintViolationException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -34,6 +40,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static net.apmoller.crb.ohp.microservices.util.ExceptionUtils.*;
+import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 
 /**
  * Set of generic error handlers to be used by Spring Boot RestController classes.
@@ -315,13 +322,13 @@ public class AnnotatedExceptionHandler {
         return buildResponseEntity(apiError);
     }
 
-    //    /**
-//     * Servlet request binding exception handler. The ServletRequestBindingException is thrown when a mandatory request
-//     * parameter is not sent in the request.
-//     *
-//     * @param webExchangeBindException {@link WebExchangeBindException}
-//     * @return responseEntity with status set to 400 and payload set to {@link ApiError}
-//     */
+        /**
+     * Servlet request binding exception handler. The ServletRequestBindingException is thrown when a mandatory request
+     * parameter is not sent in the request.
+     *
+     * @param webExchangeBindException {@link WebExchangeBindException}
+     * @return responseEntity with status set to 400 and payload set to {@link ApiError}
+     */
     @ExceptionHandler(value = WebExchangeBindException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ApiError> handleServletRequestBindingException(WebExchangeBindException webExchangeBindException,
@@ -384,6 +391,29 @@ public class AnnotatedExceptionHandler {
         return buildResponseEntity(apiError);
     }
 
+
+    @ExceptionHandler(WebClientResponseException.class)
+    public ResponseEntity<ApiError> webClientResponseExceptionHandler(WebClientResponseException ex, ServerHttpRequest request) throws JsonProcessingException {
+        ApiError apiError;
+        if (!ex.getStatusText().equalsIgnoreCase("Unauthorized")) {
+            ObjectMapper mapper = new ObjectMapper();
+            ApiError result = new ApiError();
+            try {
+                result = mapper.readValue(ex.getResponseBodyAsString(),
+                        ApiError.class);
+            } catch (Exception e) {
+                log.error(e.getMessage(),e);
+            }
+            apiError= new ApiError(Objects.requireNonNull(request.getMethod()),request.getURI().getPath(), ex.getStatusCode(), result.getMessage(),result.getDebugMessage());
+            apiError.setSubErrors(result.getSubErrors());
+        } else {
+            apiError= new ApiError(Objects.requireNonNull(request.getMethod()),request.getURI().getPath(), ex.getStatusCode(), "Invalid Token", (String) null);
+            apiError.setSubErrors(null);
+        }
+        logError(apiError);
+        return buildResponseEntity(apiError);
+    }
+
     /**
      * Handler to handle and log errors for exceptions that are due to a failing http call.
      *
@@ -417,6 +447,7 @@ public class AnnotatedExceptionHandler {
      */
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @Order(LOWEST_PRECEDENCE)
     public ResponseEntity<ApiError> handleUnexpectedException(Exception exception, ServerHttpRequest serverHttpRequest) {
 
         ApiError apiError = new ApiError(serverHttpRequest.getMethod(), serverHttpRequest.getPath().value(),
