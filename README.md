@@ -1,1 +1,1 @@
-# docm-exception-handler-service
+# ohm-exception-handler-utility
