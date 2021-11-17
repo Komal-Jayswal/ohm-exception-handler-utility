@@ -9,9 +9,9 @@
         <version>2.5.2</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>net.apmoller.crb.ohp.microservices</groupId>
-    <artifactId>ohp-exception-handlers</artifactId>
-    <name>ohp-exception-handler</name>
+    <groupId>com.example</groupId>
+    <artifactId>ohm-exception-handler-utility</artifactId>
+    <name>ohm-exception-handler-utility</name>
     <version>1.0.0</version>
     <properties>
         <java.version>11</java.version>
@@ -20,7 +20,6 @@
             **/*net/apmoller/crb/ohp/microservices/exception/*,
             **/*net/apmoller/crb/ohp/microservices/config/*,
             **/*net/apmoller/crb/ohp/microservices/model/*,
-            **/*net/apmoller/crb/ohp/microservices/util/*,
         </sonar.coverage.exclusions>
     </properties>
     <repositories>
@@ -43,6 +42,11 @@
     </distributionManagement>
     <dependencies>
 
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>3.1.1.RELEASE</version>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/org.powermock/powermock-module-junit4 -->
         <dependency>
             <groupId>org.powermock</groupId>
@@ -133,6 +137,11 @@
             <version>4.0.1</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>5.1.5.RELEASE</version>
+        </dependency>
 
     </dependencies>
     <build>
@@ -176,7 +185,6 @@
                         </goals>
                         <configuration>
                             <excludes>
-                                <exclude>**/*net/apmoller/crb/ohp/microservices/util/**</exclude>
                                 <exclude>**/*net/apmoller/crb/ohp/microservices/model/**</exclude>
                                 <exclude>**/*net/apmoller/crb/ohp/microservices/config/**</exclude>
                                 <exclude>**/*net/apmoller/crb/ohp/microservices/exception/**</exclude>
@@ -200,7 +208,6 @@
                                         <exclude>**/*net/apmoller/crb/ohp/microservices/exception/**</exclude>
                                         <exclude>**/*net/apmoller/crb/ohp/microservices/config/**</exclude>
                                         <exclude>**/*net/apmoller/crb/ohp/microservices/model/**</exclude>
-                                        <exclude>**/*net/apmoller/crb/ohp/microservices/util/**</exclude>
                                     </excludes>
                                 </rule>
                             </rules>
